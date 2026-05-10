@@ -2,6 +2,10 @@
 
 Convert lists of words to array literals in **11 programming languages**. A Rust rewrite with CLI and optional GUI.
 
+**One-click compile script:** `python tools/compile.py`
+
+---
+
 ## Supported Languages
 
 | Language   | CLI Alias          | Output Example                                   |
@@ -18,133 +22,99 @@ Convert lists of words to array literals in **11 programming languages**. A Rust
 | C#         | `cs`, `csharp`     | `string[] words = { "a", "b" };`                 |
 | C          | `c`                | `const char* words[] = { "a", "b", NULL };`      |
 
-## Prerequisites
+---
 
-- **Rust toolchain** (MSRV: 1.70+)
+## Quick Build (All Platforms)
+
+### Prerequisites
+
+- **Rust toolchain** (MSRV: 1.72+)
   ```bash
+  # Linux/macOS/WSL
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+  # Windows
+  # Download from https://rustup.rs/
   ```
 
----
-
-## Portable Builds (Single .exe / Binary)
-
-Rust produces statically-linked, self-contained executables.
-
-### Build
+### One-click Compile
 
 ```bash
-# CLI-only (smaller)
-cargo build --release
-
-# CLI + GUI (egui)
-cargo build --release --features gui
+python tools/compile.py
 ```
 
-### Output
+**What it builds:**
 
-| Platform | Portable Binary Location          |
-| -------- | --------------------------------- |
-| Windows  | `target\release\word-to-code.exe` |
-| Linux    | `target/release/word-to-code`     |
-| macOS    | `target/release/word-to-code`     |
-
-**Portable = just copy the binary anywhere and run it.**
+| Platform Running | Outputs to `build/` |
+| ---------------- | -------------------- |
+| **Native Windows** | `word-to-code-windows-gui.exe` (CLI + GUI), `.msi` (if cargo-wix installed), plus Linux builds via WSL |
+| **WSL/Linux/macOS** | `word-to-code-linux-gui` (CLI + GUI), `word-to-code-linux-cli` (CLI-only, smaller) |
 
 ---
 
-## Installers
+## Build Outputs
 
-### Windows (MSI Installer via WiX)
+All binaries are **portable (self-contained)** - copy anywhere and run.
+
+### Windows
+
+| File | Description |
+|------|-------------|
+| `word-to-code-windows-gui.exe` | CLI + GUI (egui), ~15-20 MB |
+| `word-to-code-<version>-x86_64.msi` | Windows installer (requires WiX + cargo-wix) |
+
+### Linux
+
+| File | Description |
+|------|-------------|
+| `word-to-code-linux-gui` | CLI + GUI (egui), ~15-20 MB |
+| `word-to-code-linux-cli` | CLI-only, ~2-3 MB (much smaller) |
+
+---
+
+## Manual Build (Advanced)
+
+### CLI-only (smallest)
+
+```bash
+cargo build --release --no-default-features --features cli
+# Output: target/release/word-to-code
+```
+
+### CLI + GUI (egui)
+
+```bash
+cargo build --release --features gui
+# Output: target/release/word-to-code
+```
+
+### Windows MSI Installer
 
 **First-time setup:**
-
 ```powershell
-# Install WiX v3
+# Install WiX v3 (required by cargo-wix)
 dotnet tool install --global wix --version 3.14.1
 
 # Install cargo-wix
 cargo install cargo-wix
 ```
 
-**Build MSI installer:**
-
+**Build:**
 ```powershell
-# CLI-only
-cargo wix --package word-to-code --output target/wix/
-
-# CLI + GUI
-cargo wix --package word-to-code --features gui --output target/wix/
+cargo wix --package word-to-code --features gui
+# Output: target/wix/word-to-code-<version>-x86_64.msi
 ```
 
-**Output:** `target/wix/word-to-code-<version>-x86_64.msi`
-
----
-
-### Linux (.deb Package)
-
-**First-time setup:**
+### Linux .deb Package
 
 ```bash
 cargo install cargo-deb
-```
-
-**Build .deb package:**
-
-```bash
-# CLI-only
-cargo deb
-
-# CLI + GUI
 cargo deb --features gui
-```
+# Output: target/debian/word-to-code_<version>_amd64.deb
 
-**Output:** `target/debian/word-to-code_<version>_amd64.deb`
-
-**Install:**
-
-```bash
+# Install
 sudo dpkg -i target/debian/word-to-code_*.deb
 ```
-
----
-
-### Linux (Generic tarball / Archive)
-
-```bash
-# Build first
-cargo build --release --features gui
-
-# Create portable archive
-cd target/release
-tar czvf word-to-code-portable.tar.gz word-to-code
-# or for Windows: zip word-to-code-portable.zip word-to-code.exe
-```
-
----
-
-### macOS (.dmg)
-
-**Build:**
-
-```bash
-cargo build --release --features gui
-```
-
-**Manual .dmg creation:**
-
-1. Create a folder `WordToCode`
-2. Copy `target/release/word-to-code` into it
-3. Open Disk Utility → File → New Image → Image from Folder
-
-Or use `cargo-bundle`:
-
-```bash
-cargo install cargo-bundle
-cargo bundle --release --features gui
-```
-
-**Output:** `target/release/bundle/osx/WordToCode.app`
 
 ---
 
@@ -157,24 +127,25 @@ Options:
   -l, --lang <LANG>    Target language [default: luau]
   -i, --input <FILE>   Read from file (default: stdin)
   -c, --copy           Copy output to clipboard
-  -g, --gui            Launch GUI
+  -g, --gui            Launch GUI mode
   -h, --help           Print help
+  -V, --version        Print version
 ```
 
 ### Examples
 
 ```bash
-# Pipe input
+# Pipe input (default: Luau)
 echo -e "hello\nworld\nfoo" | word-to-code
 
 # Specific language
 echo -e "hello\nworld" | word-to-code -l python
 
-# From file
-word-to-code -l rust -i words.txt
+# From file + copy to clipboard
+word-to-code -l rust -i words.txt -c
 
-# To clipboard
-echo -e "apple\nbanana" | word-to-code -l js -c
+# List all supported languages
+word-to-code --help
 ```
 
 ---
@@ -182,36 +153,46 @@ echo -e "apple\nbanana" | word-to-code -l js -c
 ## GUI Usage
 
 ```bash
-word-to-code --gui
+# Windows
+.\build\word-to-code-windows-gui.exe --gui
+
+# Linux
+./build/word-to-code-linux-gui --gui
 ```
 
-Requires build with `--features gui`. Features:
-
-- Dropdown to select target language
-- Multi-line text input
-- Convert & Copy to Clipboard buttons
-- Live preview
+**GUI Features:**
+- Dropdown to select target language (11 languages)
+- Multi-line text input area
+- "Convert" button
+- "Copy to Clipboard" button
+- "Clear All" button
+- Read-only output preview with monospace font
 
 ---
 
-## Cross-Compile (Portable for Other Platforms)
+## Project Structure
 
-### Windows → Linux
-
-```bash
-rustup target add x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-unknown-linux-gnu
 ```
-
-### Linux → Windows
-
-```bash
-rustup target add x86_64-pc-windows-gnu
-cargo build --release --target x86_64-pc-windows-gnu
+WordToCode/
+├── Cargo.toml              # Rust project config
+├── README.md               # This file
+├── .gitignore
+├── src/
+│   ├── main.rs             # CLI + GUI entry point
+│   └── lib.rs              # Core conversion logic (all languages)
+├── tools/
+│   └── compile.py          # One-click build script
+├── build/                  # Output (created by compile.py)
+└── target/                 # Rust build artifacts
 ```
 
 ---
 
 ## Original Project
 
-Originally a Python tkinter app (`main.py`) that only converted to Luau arrays.
+Originally a Python tkinter app (`main.py`) that only converted to Luau arrays. Rewritten in Rust with:
+- 11 programming languages supported
+- CLI mode with piping support
+- Optional GUI (egui)
+- Portable self-contained binaries
+- Installer generation
