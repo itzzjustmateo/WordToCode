@@ -24,8 +24,9 @@ echo "hello" | ./build/wtc-linux-gui -l python   # CLI mode
 
 | Command | What it does |
 |---------|--------------|
-| `wtc` (no args) | **Opens GUI** |
+| `wtc` (no args, no pipe) | **Opens GUI** |
 | `wtc -l python ...` | CLI mode |
+| `echo "x" \| wtc` | CLI mode (detects pipe) |
 | `wtc --gui` | Opens GUI (explicit) |
 | `wtc --help` | Show help |
 | `wtc --version` | Show version |
@@ -68,6 +69,18 @@ echo "hello" | ./build/wtc-linux-gui -l python   # CLI mode
 python tools/compile.py
 ```
 
+---
+
+## What Gets Built
+
+**Portable ZIP** is always created (no extra dependencies needed).
+
+| Output | Format | Dependencies |
+|--------|--------|--------------|
+| Portable ZIP | `.zip` | None (always created) |
+| NSIS Installer | `.exe` | NSIS (`makensis` in PATH) - optional |
+| WiX MSI | `.msi` | WiX v3.14 + cargo-wix - legacy/optional |
+
 **Build Outputs (`build/`):**
 
 | Windows | Linux/WSL |
@@ -75,9 +88,56 @@ python tools/compile.py
 | `wtc-windows-gui.exe` | `wtc-linux-gui` |
 | `wtc-windows-cli.exe` | `wtc-linux-cli` |
 | `word-to-code-windows-gui.exe` | `word-to-code-linux-gui` |
-| `.msi` (if WiX installed) | `word-to-code-linux-cli` |
+| `WordToCode-portable-windows.zip` | `WordToCode-portable-linux.zip` |
+| `WordToCode-Setup.exe` (if NSIS) | |
 
-**On Native Windows:** Also builds Linux binaries via WSL (if available).
+---
+
+## Distribution Options
+
+### 1. Portable ZIP (Recommended, Default)
+
+**Always created** - no extra dependencies needed.
+
+Just distribute the `.zip` file. Users extract and run.
+
+```
+WordToCode-portable-windows.zip
+├── wtc-windows-gui.exe    (main: CLI + GUI)
+├── wtc-windows-cli.exe    (smaller: CLI only)
+└── README.txt
+```
+
+### 2. NSIS Installer (Optional)
+
+NSIS is lightweight and doesn't have the WiX v3/v4 confusion.
+
+**Install NSIS:**
+- Download from: https://nsis.sourceforge.io/Download
+- Or with winget: `winget install NSIS.NSIS`
+- Make sure `makensis` is in your PATH
+
+**The compile script will auto-detect and use it.**
+
+Output: `build/WordToCode-Setup.exe`
+
+### 3. WiX MSI (Legacy, Not Recommended)
+
+WiX has v3 vs v4 compatibility issues. Only use if you specifically need MSI.
+
+**Must install IN THIS ORDER:**
+
+1. **WiX Toolset v3.14** (NOT v4)
+   - Download: https://github.com/wixtoolset/wix3/releases
+   - Look for `wix314.exe`
+   - Run installer, **restart terminal**
+
+2. **cargo-wix**
+   ```powershell
+   cargo install cargo-wix
+   ```
+
+The compile script will attempt MSI if both are found.
 
 ---
 
@@ -126,8 +186,13 @@ wtc -l python ...      # CLI mode
 ### Windows
 
 ```powershell
-# Copy to a directory in your PATH, or install via MSI
-# If using MSI: double-click the .msi installer
+# Option 1: Use the portable EXE
+# Copy to a directory in your PATH
+
+# Option 2: Use NSIS installer (if built)
+# Double-click: .\build\WordToCode-Setup.exe
+
+# Option 3: Extract portable ZIP anywhere
 ```
 
 ---
@@ -144,7 +209,13 @@ WordToCode/
 │   └── lib.rs              # Core conversion logic (11 languages)
 ├── tools/
 │   └── compile.py          # One-click build script
+├── wix/                    # Created by `cargo wix init` (optional)
+│   └── main.wxs            # WiX MSI template
 ├── build/                  # Output (created by compile.py)
+│   ├── wtc-linux-gui       # Shortcut binary
+│   ├── word-to-code-linux-gui
+│   ├── WordToCode-portable-linux.zip
+│   └── ...
 └── target/                 # Rust build artifacts
 ```
 
@@ -157,4 +228,4 @@ Originally a Python tkinter app (`main.py`) that only converted to Luau arrays. 
 - Smart `wtc` command (no args = GUI)
 - Optional egui GUI
 - Portable self-contained binaries
-- MSI/.deb installer support
+- Multiple installer options (portable ZIP, NSIS, WiX)
