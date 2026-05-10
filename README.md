@@ -1,8 +1,34 @@
 # WordToCode
 
-Convert lists of words to array literals in **11 programming languages**. A Rust rewrite with CLI and optional GUI.
+Convert lists of words to array literals in **11 programming languages**. Rust rewrite with CLI + optional GUI.
 
-**One-click compile script:** `python tools/compile.py`
+**Short command:** `wtc`  
+**One-click compile:** `python tools/compile.py`
+
+---
+
+## Quick Start
+
+```bash
+# Build all binaries
+python tools/compile.py
+
+# Use the built binary (Linux/WSL example)
+./build/wtc-linux-gui                    # Opens GUI
+echo "hello" | ./build/wtc-linux-gui -l python   # CLI mode
+```
+
+---
+
+## `wtc` Usage (Short Command)
+
+| Command | What it does |
+|---------|--------------|
+| `wtc` (no args) | **Opens GUI** |
+| `wtc -l python ...` | CLI mode |
+| `wtc --gui` | Opens GUI (explicit) |
+| `wtc --help` | Show help |
+| `wtc --version` | Show version |
 
 ---
 
@@ -24,7 +50,7 @@ Convert lists of words to array literals in **11 programming languages**. A Rust
 
 ---
 
-## Quick Build (All Platforms)
+## Build
 
 ### Prerequisites
 
@@ -33,8 +59,7 @@ Convert lists of words to array literals in **11 programming languages**. A Rust
   # Linux/macOS/WSL
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-  # Windows
-  # Download from https://rustup.rs/
+  # Windows: https://rustup.rs/
   ```
 
 ### One-click Compile
@@ -43,85 +68,23 @@ Convert lists of words to array literals in **11 programming languages**. A Rust
 python tools/compile.py
 ```
 
-**What it builds:**
+**Build Outputs (`build/`):**
 
-| Platform Running | Outputs to `build/` |
-| ---------------- | -------------------- |
-| **Native Windows** | `word-to-code-windows-gui.exe` (CLI + GUI), `.msi` (if cargo-wix installed), plus Linux builds via WSL |
-| **WSL/Linux/macOS** | `word-to-code-linux-gui` (CLI + GUI), `word-to-code-linux-cli` (CLI-only, smaller) |
+| Windows | Linux/WSL |
+|---------|-----------|
+| `wtc-windows-gui.exe` | `wtc-linux-gui` |
+| `wtc-windows-cli.exe` | `wtc-linux-cli` |
+| `word-to-code-windows-gui.exe` | `word-to-code-linux-gui` |
+| `.msi` (if WiX installed) | `word-to-code-linux-cli` |
 
----
-
-## Build Outputs
-
-All binaries are **portable (self-contained)** - copy anywhere and run.
-
-### Windows
-
-| File | Description |
-|------|-------------|
-| `word-to-code-windows-gui.exe` | CLI + GUI (egui), ~15-20 MB |
-| `word-to-code-<version>-x86_64.msi` | Windows installer (requires WiX + cargo-wix) |
-
-### Linux
-
-| File | Description |
-|------|-------------|
-| `word-to-code-linux-gui` | CLI + GUI (egui), ~15-20 MB |
-| `word-to-code-linux-cli` | CLI-only, ~2-3 MB (much smaller) |
-
----
-
-## Manual Build (Advanced)
-
-### CLI-only (smallest)
-
-```bash
-cargo build --release --no-default-features --features cli
-# Output: target/release/word-to-code
-```
-
-### CLI + GUI (egui)
-
-```bash
-cargo build --release --features gui
-# Output: target/release/word-to-code
-```
-
-### Windows MSI Installer
-
-**First-time setup:**
-```powershell
-# Install WiX v3 (required by cargo-wix)
-dotnet tool install --global wix --version 3.14.1
-
-# Install cargo-wix
-cargo install cargo-wix
-```
-
-**Build:**
-```powershell
-cargo wix --package word-to-code --features gui
-# Output: target/wix/word-to-code-<version>-x86_64.msi
-```
-
-### Linux .deb Package
-
-```bash
-cargo install cargo-deb
-cargo deb --features gui
-# Output: target/debian/word-to-code_<version>_amd64.deb
-
-# Install
-sudo dpkg -i target/debian/word-to-code_*.deb
-```
+**On Native Windows:** Also builds Linux binaries via WSL (if available).
 
 ---
 
 ## CLI Usage
 
 ```
-word-to-code [OPTIONS]
+wtc [OPTIONS]
 
 Options:
   -l, --lang <LANG>    Target language [default: luau]
@@ -132,41 +95,40 @@ Options:
   -V, --version        Print version
 ```
 
-### Examples
+### CLI Examples
 
 ```bash
-# Pipe input (default: Luau)
-echo -e "hello\nworld\nfoo" | word-to-code
+# Pipe input
+echo -e "hello\nworld\nfoo" | wtc
 
 # Specific language
-echo -e "hello\nworld" | word-to-code -l python
+echo -e "hello\nworld" | wtc -l python
 
 # From file + copy to clipboard
-word-to-code -l rust -i words.txt -c
-
-# List all supported languages
-word-to-code --help
+wtc -l rust -i words.txt -c
 ```
 
 ---
 
-## GUI Usage
+## Install (System-wide)
+
+### Linux
 
 ```bash
-# Windows
-.\build\word-to-code-windows-gui.exe --gui
+# Copy to a location in your PATH
+sudo cp ./build/wtc-linux-gui /usr/local/bin/wtc
 
-# Linux
-./build/word-to-code-linux-gui --gui
+# Now just run:
+wtc                    # opens GUI
+wtc -l python ...      # CLI mode
 ```
 
-**GUI Features:**
-- Dropdown to select target language (11 languages)
-- Multi-line text input area
-- "Convert" button
-- "Copy to Clipboard" button
-- "Clear All" button
-- Read-only output preview with monospace font
+### Windows
+
+```powershell
+# Copy to a directory in your PATH, or install via MSI
+# If using MSI: double-click the .msi installer
+```
 
 ---
 
@@ -179,7 +141,7 @@ WordToCode/
 ├── .gitignore
 ├── src/
 │   ├── main.rs             # CLI + GUI entry point
-│   └── lib.rs              # Core conversion logic (all languages)
+│   └── lib.rs              # Core conversion logic (11 languages)
 ├── tools/
 │   └── compile.py          # One-click build script
 ├── build/                  # Output (created by compile.py)
@@ -191,8 +153,8 @@ WordToCode/
 ## Original Project
 
 Originally a Python tkinter app (`main.py`) that only converted to Luau arrays. Rewritten in Rust with:
-- 11 programming languages supported
-- CLI mode with piping support
-- Optional GUI (egui)
+- 11 programming languages
+- Smart `wtc` command (no args = GUI)
+- Optional egui GUI
 - Portable self-contained binaries
-- Installer generation
+- MSI/.deb installer support

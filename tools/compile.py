@@ -122,11 +122,14 @@ def build_windows(features="gui"):
 
     src = CARGO_TARGET / "release" / "word-to-code.exe"
     dst = BUILD_DIR / f"word-to-code-windows{suffix}.exe"
+    wtc_dst = BUILD_DIR / f"wtc-windows{suffix}.exe"
 
     if src.exists():
         shutil.copy2(src, dst)
+        shutil.copy2(src, wtc_dst)
         size_mb = dst.stat().st_size / (1024 * 1024)
         print(f"✓ {dst.name} ({size_mb:.2f} MB)")
+        print(f"✓ {wtc_dst.name} (shortcut)")
         return dst
     return None
 
@@ -170,20 +173,26 @@ def build_linux_via_wsl():
 
     linux_gui_src = PROJECT_ROOT / "target" / "release" / "word-to-code"
     linux_gui_dst = BUILD_DIR / "word-to-code-linux-gui"
+    wtc_gui_dst = BUILD_DIR / "wtc-linux-gui"
     if linux_gui_src.exists():
         shutil.copy2(linux_gui_src, linux_gui_dst)
+        shutil.copy2(linux_gui_src, wtc_gui_dst)
         size_mb = linux_gui_dst.stat().st_size / (1024 * 1024)
         print(f"✓ {linux_gui_dst.name} ({size_mb:.2f} MB)")
+        print(f"✓ {wtc_gui_dst.name} (shortcut)")
 
     print("\n>>> Building Linux (CLI-only) via WSL...")
     run_wsl("cargo build --release --no-default-features --features cli --package word-to-code")
 
     linux_cli_src = PROJECT_ROOT / "target" / "release" / "word-to-code"
     linux_cli_dst = BUILD_DIR / "word-to-code-linux-cli"
+    wtc_cli_dst = BUILD_DIR / "wtc-linux-cli"
     if linux_cli_src.exists():
         shutil.copy2(linux_cli_src, linux_cli_dst)
+        shutil.copy2(linux_cli_src, wtc_cli_dst)
         size_mb = linux_cli_dst.stat().st_size / (1024 * 1024)
         print(f"✓ {linux_cli_dst.name} ({size_mb:.2f} MB)")
+        print(f"✓ {wtc_cli_dst.name} (shortcut)")
 
 def build_linux_native():
     """Build Linux binaries on native Linux/WSL."""
@@ -197,10 +206,13 @@ def build_linux_native():
 
     src = CARGO_TARGET / "release" / "word-to-code"
     dst = BUILD_DIR / "word-to-code-linux-gui"
+    wtc_dst = BUILD_DIR / "wtc-linux-gui"
     if src.exists():
         shutil.copy2(src, dst)
+        shutil.copy2(src, wtc_dst)
         size_mb = dst.stat().st_size / (1024 * 1024)
         print(f"✓ {dst.name} ({size_mb:.2f} MB)")
+        print(f"✓ {wtc_dst.name} (shortcut)")
 
     print("\n>>> Building Linux (CLI-only)...")
     run([
@@ -213,10 +225,13 @@ def build_linux_native():
 
     src = CARGO_TARGET / "release" / "word-to-code"
     dst = BUILD_DIR / "word-to-code-linux-cli"
+    wtc_dst = BUILD_DIR / "wtc-linux-cli"
     if src.exists():
         shutil.copy2(src, dst)
+        shutil.copy2(src, wtc_dst)
         size_mb = dst.stat().st_size / (1024 * 1024)
         print(f"✓ {dst.name} ({size_mb:.2f} MB)")
+        print(f"✓ {wtc_dst.name} (shortcut)")
 
 def show_summary():
     """Show build outputs."""
@@ -232,7 +247,10 @@ def show_summary():
             if item.is_file():
                 size_mb = item.stat().st_size / (1024 * 1024)
                 total_size += item.stat().st_size
-                print(f"  - {item.name} ({size_mb:.2f} MB)")
+                if item.name.startswith("wtc-"):
+                    print(f"  - {item.name} (shortcut)")
+                else:
+                    print(f"  - {item.name} ({size_mb:.2f} MB)")
 
     if total_size == 0:
         print("  (none)")
@@ -242,16 +260,20 @@ def show_summary():
     print("\n" + "-" * 60)
     print("Usage:")
     print("-" * 60)
+    print("\n  wtc (no args)      = Opens GUI")
+    print("  wtc -l python ...   = CLI mode")
+    print("  wtc --gui           = Opens GUI (explicit)")
+    print("  wtc --help          = Show help")
+
     if IS_WINDOWS:
         print("\nWindows:")
-        print("  .\\build\\word-to-code-windows-gui.exe --help")
-        print("  .\\build\\word-to-code-windows-gui.exe --gui")
-        print("  .\\build\\word-to-code-windows-gui.exe (same as above, both CLI+GUI)")
+        print("  .\\build\\wtc-windows-gui.exe")
+        print("  .\\build\\wtc-windows-gui.exe -l rust")
     else:
-        print("\nLinux:")
-        print("  ./build/word-to-code-linux-gui --help")
-        print("  ./build/word-to-code-linux-gui --gui")
-        print("  ./build/word-to-code-linux-cli --help  (smaller, no GUI support)")
+        print("\nLinux/WSL:")
+        print("  ./build/wtc-linux-gui")
+        print("  ./build/wtc-linux-gui -l python")
+        print("  ./build/wtc-linux-cli  (smaller, no GUI)")
 
 def main():
     print("=" * 60)

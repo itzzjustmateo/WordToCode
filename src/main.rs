@@ -25,35 +25,71 @@ struct Args {
     copy: bool,
 }
 
-fn main() {
+#[cfg(feature = "gui")]
+fn has_user_args() -> bool {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() <= 1 {
+        return false;
+    }
+    for arg in &args[1..] {
+        if arg == "--help" || arg == "-h" || arg == "--version" || arg == "-V" {
+            return true;
+        }
+        if arg.starts_with('-') {
+            return true;
+        }
+    }
+    false
+}
+
+fn stdin_is_pipe() -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::fd::AsRawFd;
+        let stdin = io::stdin();
+        let fd = stdin.as_raw_fd();
+        unsafe { libc::isatty(fd) == 0 }
+    }
+    #[cfg(windows)]
+    {
+        false
+    }
+}
+
+#[cfg(feature = "gui")]
+fn should_launch_gui() -> bool {
+    let args: Vec<String> = std::env::args().collect();
+    let has_gui_flag = args.iter().any(|a| a == "--gui" || a == "-g");
+
+    if has_gui_flag {
+        return true;
+    }
+
+    if !has_user_args() && !stdin_is_pipe() {
+        return true;
+    }
+
+    false
+}
+
+#[cfg(feature = "gui")]
+fn launch_gui() {
+    let native_options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([700.0, 500.0])
+            .with_resizable(true),
+        ..Default::default()
+    };
+    eframe::run_native(
+        "Words → Code Converter",
+        native_options,
+        Box::new(|cc| Ok(Box::new(App::new(cc)))),
+    )
+    .expect("Failed to run GUI");
+}
+
+fn run_cli() {
     let args = Args::parse();
-
-    #[cfg(feature = "gui")]
-    {
-        if args.gui {
-            let native_options = eframe::NativeOptions {
-                viewport: egui::ViewportBuilder::default()
-                    .with_inner_size([700.0, 500.0])
-                    .with_resizable(true),
-                ..Default::default()
-            };
-            eframe::run_native(
-                "Words → Code Converter",
-                native_options,
-                Box::new(|cc| Ok(Box::new(App::new(cc)))),
-            )
-            .expect("Failed to run GUI");
-            return;
-        }
-    }
-
-    #[cfg(not(feature = "gui"))]
-    {
-        if args.gui {
-            eprintln!("GUI feature not enabled. Recompile with --features gui");
-            std::process::exit(1);
-        }
-    }
 
     let language = match Language::from_name(&args.lang) {
         Some(lang) => lang,
@@ -76,11 +112,20 @@ fn main() {
             }
         }
     } else {
-        let mut buffer = String::new();
-        io::stdin()
-            .read_to_string(&mut buffer)
-            .expect("Failed to read from stdin");
-        buffer
+        if stdin_is_pipe() {
+            let mut buffer = String::new();
+            io::stdin()
+                .read_to_string(&mut buffer)
+                .expect("Failed to read from stdin");
+            buffer
+        } else {
+            Args::parse();
+            eprintln!("No input provided. Use:");
+            eprintln!("  - Pipe input: echo \"hello\" | wtc -l python");
+            eprintln!("  - Input file: wtc -l python -i words.txt");
+            eprintln!("  - Or just run without args to open GUI: wtc");
+            std::process::exit(1);
+        }
     };
 
     let words = parse_input(&input);
@@ -100,6 +145,27 @@ fn main() {
     }
 
     println!("{}", result);
+}
+
+fn main() {
+    #[cfg(feature = "gui")]
+    {
+        if should_launch_gui() {
+            launch_gui();
+            return;
+        }
+    }
+
+    #[cfg(not(feature = "gui"))]
+    {
+        let args: Vec<String> = std::env::args().collect();
+        if args.iter().any(|a| a == "--gui" || a == "-g") {
+            eprintln!("GUI feature not enabled. Recompile with --features gui");
+            std::process::exit(1);
+        }
+    }
+
+    run_cli();
 }
 
 #[cfg(feature = "gui")]
