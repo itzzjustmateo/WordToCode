@@ -32,14 +32,15 @@ fn main() {
     {
         if args.gui {
             let native_options = eframe::NativeOptions {
-                initial_window_size: Some(egui::vec2(700.0, 500.0)),
-                resizable: true,
+                viewport: egui::ViewportBuilder::default()
+                    .with_inner_size([700.0, 500.0])
+                    .with_resizable(true),
                 ..Default::default()
             };
             eframe::run_native(
                 "Words → Code Converter",
                 native_options,
-                Box::new(|cc| Box::new(App::new(cc))),
+                Box::new(|cc| Ok(Box::new(App::new(cc)))),
             )
             .expect("Failed to run GUI");
             return;
