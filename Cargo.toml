@@ -1,0 +1,24 @@
+[package]
+name = "word-to-code"
+version = "0.1.0"
+edition = "2021"
+description = "Convert lists of words to array literals in multiple programming languages"
+authors = ["ItzzMateo"]
+license = "MIT"
+
+[[bin]]
+name = "word-to-code"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+arboard = "3.4"
+
+[features]
+default = ["cli"]
+cli = []
+gui = ["dep:eframe"]
+
+[dependencies.eframe]
+version = "0.29"
+optional = true
